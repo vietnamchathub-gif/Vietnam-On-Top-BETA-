@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Recruitment</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body{
+      background:#111;
+      color:white;
+      font-family:Arial;
+      text-align:center;
+      padding:20px;
+    }
+    input,textarea{
+      width:90%;
+      padding:10px;
+      margin:10px 0;
+      border-radius:8px;
+      border:none;
+    }
+    button{
+      padding:12px 20px;
+      border:none;
+      border-radius:8px;
+      background:red;
+      color:white;
+      font-weight:bold;
+    }
+  </style>
+</head>
+<body>
+
+<h2>Recruitment</h2>
+
+<input id="name" placeholder="Your Name">
+<input id="email" placeholder="Your Email">
+<textarea id="reason" placeholder="Why join?" rows="4"></textarea>
+
+<button id="applyBtn" onclick="apply()">Apply</button>
+<p id="status"></p>
+<p id="countdown" style="color:orange;"></p>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+<script>
+
+  const firebaseConfig = {
+    // DÁN firebaseConfig của mày vào đây
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+
+  const TWO_YEARS = 1000 * 60 * 60 * 24 * 365 * 2;
+
+  function apply(){
+
+    db.ref("recruitmentLock").once("value", lockSnap=>{
+      if(lockSnap.exists()){
+        alert("Đã giới hạn lượt ứng tuyển");
+        return;
+      }
+
+      const name = nameInput.value;
+      const email = emailInput.value;
+      const reason = reasonInput.value;
+
+      if(!name || !email || !reason){
+        alert("Fill all fields");
+        return;
+      }
+
+      const id = Date.now();
+
+      db.ref("applications/"+id).set({
+        name:name,
+        email:email,
+        reason:reason,
+        createdAt:Date.now()
+      }).then(()=>{
+
+        db.ref("applications").once("value", snap=>{
+
+          const data = snap.val();
+          const keys = Object.keys(data);
+
+          if(keys.length >= 100){
+
+            // Random chọn 5 hồ sơ
+            const shuffled = keys.sort(()=>0.5 - Math.random());
+            const selected = shuffled.slice(0,5);
+
+            const selectedData = {};
+            selected.forEach(k=>{
+              selectedData[k] = data[k];
+            });
+
+            db.ref("selectedRecruitment").set(selectedData);
+            db.ref("recruitmentLock").set({lockedAt:Date.now()});
+            db.ref("applications").remove();
+
+            lockSystem();
+          }
+
+        });
+
+      });
+
+    });
+
+  }
+
+  function lockSystem(){
+
+    document.getElementById("applyBtn").disabled = true;
+    document.getElementById("status").innerText =
+    "Đã giới hạn lượt ứng tuyển";
+
+    startCountdown();
+  }
+
+  function startCountdown(){
+
+    db.ref("recruitmentLock").once("value", snap=>{
+      if(!snap.exists()) return;
+
+      const endTime = snap.val().lockedAt + TWO_YEARS;
+
+      setInterval(()=>{
+        const diff = endTime - Date.now();
+
+        if(diff <= 0){
+          db.ref("recruitmentLock").remove();
+          document.getElementById("applyBtn").disabled = false;
+          document.getElementById("status").innerText = "";
+          document.getElementById("countdown").innerText = "";
+          return;
+        }
+
+        const days = Math.floor(diff / (1000*60*60*24));
+        document.getElementById("countdown").innerText =
+        "Mở lại sau: " + days + " ngày";
+
+      },1000);
+
+    });
+
+  }
+
+  db.ref("recruitmentLock").once("value", snap=>{
+    if(snap.exists()){
+      lockSystem();
+    }
+  });
+
+</script>
+
+</body>
+</html>
