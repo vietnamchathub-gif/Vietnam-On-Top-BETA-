@@ -73,7 +73,10 @@ db.ref("users").once("value", function(snapshot) {
       <td>${u.name || ""}</td>
       <td>${u.username || ""}</td>
       <td>${u.premium || false}</td>
-      <td>${u.banned || false}</td>
+      <td>
+  ${u.banned || false}
+  ${u.banned ? `<button onclick="unbanUser('${uid}')">Mở khóa</button>` : ""}
+</td>
       <td>${u.created || ""}</td>
     </tr>
     `;
