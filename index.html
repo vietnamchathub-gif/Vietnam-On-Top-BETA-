@@ -59,14 +59,23 @@ function register(){
   const p = password.value;
 
   auth.createUserWithEmailAndPassword(e,p)
-  .then(cred=>{
-    db.ref("users/"+cred.user.uid).set({
-      username:u,
-      banned:false
-    });
-    alert("Đăng ký thành công");
-  })
-  .catch(err=>alert(err.message));
+.then(cred=>{
+
+  const user = cred.user;
+
+  db.ref("users/"+user.uid).set({
+    username: u,
+    email: e,
+    uid: user.uid,
+    createdAt: new Date().toISOString(),
+    banned: false,
+    premium: false,
+    role: "user"
+  });
+
+  alert("Đăng ký thành công");
+})
+.catch(err=>alert(err.message));
 }
 
 function login(){
