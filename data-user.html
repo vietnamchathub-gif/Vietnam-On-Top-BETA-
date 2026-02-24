@@ -61,6 +61,7 @@ db.ref("users").once("value", function(snapshot) {
     <th>Premium</th>
     <th>Banned</th>
     <th>Created</th>
+    <th>Action</th>
   </tr>
   `;
 
@@ -107,6 +108,18 @@ db.ref("users").once("value", function(snapshot) {
   .catch(error=>{
     alert("Lỗi: " + error.message);
   });
+  }
+  function deleteUser(uid){
+  if (!confirm("Bạn có chắc muốn XÓA tài khoản này?")) return;
+
+  db.ref("users/" + uid).remove()
+    .then(()=>{
+      alert("Đã xóa tài khoản");
+      location.reload();
+    })
+    .catch(error=>{
+      alert("Lỗi: " + error.message);
+    });
   }
 </script>
 
