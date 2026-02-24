@@ -2,249 +2,212 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Vietnam On Top 🇻🇳 [BETA]</title>
+<title>Vietnam On Top</title>
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 
 <style>
 body{
-  margin:0;
-  font-family:Arial;
-  background:linear-gradient(180deg,#0d1b2a,#1b263b,#1e3a5f);
-  color:white;
+margin:0;
+font-family:Arial;
+background:#0b3d91;
+color:white;
 }
 
 header{
-  background:red;
-  padding:15px;
-  text-align:center;
-  font-weight:bold;
-}
-
-nav{
-  display:flex;
-  justify-content:space-around;
-  background:rgba(0,0,0,0.4);
-  padding:10px;
-}
-
-nav button{
-  background:none;
-  border:none;
-  color:white;
-  font-size:14px;
-}
-
-.section{display:none;padding:20px;}
-.active{display:block;}
-
-.card{
-  background:rgba(0,0,0,0.4);
-  padding:15px;
-  border-radius:10px;
-  margin-bottom:10px;
-}
-
-input,select{
-  width:100%;
-  padding:8px;
-  border-radius:6px;
-  border:none;
-  margin-top:5px;
+background:red;
+padding:15px;
+text-align:center;
+font-size:22px;
+font-weight:bold;
 }
 
 button{
-  padding:8px;
-  border:none;
-  border-radius:6px;
-  background:red;
-  color:white;
-  margin-top:8px;
+padding:10px;
+margin:5px;
+border:none;
+border-radius:6px;
+cursor:pointer;
+}
+
+.room{
+background:white;
+color:black;
+padding:10px;
+margin:5px;
+border-radius:8px;
+cursor:pointer;
+}
+
+#chatBox{
+height:300px;
+overflow:auto;
+background:white;
+color:black;
+padding:10px;
+border-radius:10px;
+}
+
+input{
+padding:8px;
+border-radius:5px;
+border:none;
 }
 </style>
 </head>
 
 <body>
 
-<header>Vietnam On Top 🇻🇳 [BETA]</header>
+<header>🇻🇳 Vietnam On Top 🇻🇳</header>
 
-<nav>
-  <button onclick="showSection('home')">🏠 Trang chủ</button>
-  <button onclick="showSection('confess')">💬 Tâm sự</button>
-  <button onclick="showSection('profile')">👤 Hồ sơ</button>
-</nav>
-
-<div id="home" class="section active">
-  <h2>🔥 Trang Chủ</h2>
-  <div class="card">Chào mừng đến hệ thống 500 đội Vietnam On Top 😎</div>
+<div id="login">
+<h3>Đăng nhập</h3>
+<input id="email" placeholder="Email"><br>
+<input id="password" type="password" placeholder="Mật khẩu"><br>
+<button onclick="register()">Đăng ký</button>
+<button onclick="login()">Đăng nhập</button>
 </div>
 
-<div id="confess" class="section">
-  <h2>💬 Khu vực Tâm Sự (500 Đội)</h2>
+<div id="app" style="display:none;padding:10px;">
 
-  <div class="card">
-    <label>Chọn đội:</label>
-    <select id="teamSelect"></select>
-    <button onclick="joinTeam()">Vào đội</button>
-  </div>
+<h3>Chọn Đội</h3>
+<div id="rooms"></div>
 
-  <div id="chatArea" style="display:none;">
-    <h3 id="teamTitle"></h3>
-    <div id="chatBox"></div>
-    <input id="chatInput" placeholder="Nhập tin nhắn...">
-    <button onclick="sendMessage()">Gửi</button>
-  </div>
+<div id="roomInside" style="display:none;">
+<button onclick="back()">⬅ Back</button>
+<h3 id="roomTitle"></h3>
+
+<img src="https://upload.wikimedia.org/wikipedia/commons/2/21/Flag_of_Vietnam.svg" width="100%">
+
+<div id="chatBox"></div>
+<input id="msg" placeholder="Nhắn tin...">
+<button onclick="send()">Gửi</button>
 </div>
 
-<div id="profile" class="section">
-  <h2>👤 Hồ sơ</h2>
-  <div class="card">
-    <p><b>Tên tài khoản:</b> <span id="profileName"></span></p>
-    <p><b>Ngày tạo tài khoản:</b> <span id="profileDate"></span></p>
-    <p><b>Premium [ĐẶC QUYỀN]:</b> <span id="profilePremium"></span></p>
-  </div>
+<hr>
+
+<h3>Hồ sơ</h3>
+<div id="profile"></div>
+
 </div>
 
 <script>
-function showSection(id){
-  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-}
-</script>
-
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-import { getDatabase, ref, push, onValue, set, get }
-from "https://www.gstatic.com/firebasejs/12.9.0/firebase-database.js";
-
 const firebaseConfig = {
-  apiKey: "AIzaSyCvKaa4S4icydrj2JYA5ch0ckGC_mT0bvc",
-  authDomain: "vietnamontop-77401.firebaseapp.com",
-  databaseURL: "https://vietnamontop-77401-default-rtdb.firebaseio.com",
-  projectId: "vietnamontop-77401",
-  storageBucket: "vietnamontop-77401.firebasestorage.app",
-  messagingSenderId: "89611948481",
-  appId: "1:89611948481:web:11116769713da2629d5f40"
+apiKey: "AIzaSyCvKaa4S4icydrj2JYA5ch0ckGC_mT0bvc",
+authDomain: "vietnamontop-77401.firebaseapp.com",
+databaseURL: "https://vietnamontop-77401-default-rtdb.firebaseio.com",
+projectId: "vietnamontop-77401",
+storageBucket: "vietnamontop-77401.firebasestorage.app",
+messagingSenderId: "89611948481",
+appId: "1:89611948481:web:0106f02e15f429679d5f40",
+measurementId: "G-5LV99YF5DP"
 };
 
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.database();
 
-/* ===== USER SYSTEM ===== */
+let currentRoom = null;
+let messageCount = 0;
+let spamTimer = null;
 
-let userId = localStorage.getItem("userId");
-
-if(!userId){
-  userId = "user"+Date.now();
-  localStorage.setItem("userId",userId);
-
-  let name = prompt("Nhập tên tài khoản:");
-  set(ref(db,"users/"+userId),{
-    name:name,
-    created:new Date().toLocaleString(),
-    premium:false
-  });
+function register(){
+auth.createUserWithEmailAndPassword(
+email.value,
+password.value
+).then(user=>{
+db.ref("users/"+user.user.uid).set({
+created:new Date().toLocaleString(),
+premium:false,
+banned:false
+});
+});
 }
 
-/* LOAD PROFILE */
-get(ref(db,"users/"+userId)).then(snapshot=>{
-  const data=snapshot.val();
-  document.getElementById("profileName").innerText=data.name;
-  document.getElementById("profileDate").innerText=data.created;
-  document.getElementById("profilePremium").innerHTML=
-    data.premium?"<b style='color:gold'>Đã mua</b>":"Chưa mua";
-});
-
-/* ===== BAN CHECK ===== */
-
-function showBan(){
-  document.body.innerHTML=`
-    <div style="background:black;color:red;height:100vh;display:flex;align-items:center;justify-content:center;font-size:20px;text-align:center;">
-    Bạn đã vi phạm chính sách của chúng tôi.
-    </div>`;
+function login(){
+auth.signInWithEmailAndPassword(
+email.value,
+password.value
+);
 }
 
-get(ref(db,"bannedUsers/"+userId)).then(snap=>{
-  if(snap.exists()) showBan();
+auth.onAuthStateChanged(user=>{
+if(user){
+db.ref("users/"+user.uid+"/banned").once("value",snap=>{
+if(snap.val()===true){
+alert("Bạn đã vi phạm chính sách của chúng tôi.");
+auth.signOut();
+return;
+}
 });
 
-/* ===== TEAM SYSTEM ===== */
+login.style.display="none";
+app.style.display="block";
 
-const teamSelect=document.getElementById("teamSelect");
+loadProfile(user.uid);
+createRooms();
+}
+});
 
+function loadProfile(uid){
+db.ref("users/"+uid).once("value",snap=>{
+let data=snap.val();
+profile.innerHTML=`
+Tên tài khoản: ${uid}<br>
+Ngày tạo tài khoản: ${data.created}<br>
+Premium [ĐẶC QUYỀN]: ${data.premium ? "**Đã mua**" : "**Chưa mua**"}
+`;
+});
+}
+
+function createRooms(){
 for(let i=1;i<=500;i++){
-  let opt=document.createElement("option");
-  opt.value="team"+i;
-  opt.text="Đội "+i;
-  teamSelect.appendChild(opt);
+let div=document.createElement("div");
+div.className="room";
+div.innerText="Đội "+i;
+div.onclick=()=>enterRoom("room"+i);
+rooms.appendChild(div);
+}
 }
 
-let currentTeam=null;
+function enterRoom(room){
+currentRoom=room;
+roomInside.style.display="block";
+roomTitle.innerText="Đội "+room.replace("room","");
+chatBox.innerHTML="";
+rooms.style.display="none";
 
-window.joinTeam=function(){
-  currentTeam=teamSelect.value;
-  document.getElementById("chatArea").style.display="block";
-  document.getElementById("teamTitle").innerText="Bạn đang ở "+teamSelect.options[teamSelect.selectedIndex].text;
-  loadMessages();
-};
-
-/* ===== KICK SYSTEM ===== */
-
-let messageTimes=[];
-
-function showKick(){
-  document.body.innerHTML=`
-    <div style="background:black;color:orange;height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:20px;">
-    <div>
-    <b>[Data]</b><br><br>
-    Hệ thống chúng tôi phát hiện lần dùng của bạn rất khả nghi có thể là đang tấn công hệ thống,
-    cho nên bạn sẽ bị đá khỏi phiên sử dụng.<br><br>
-    ❓ Nếu bạn muốn hỗ trợ, hãy truy cập vào kênh hỗ trợ ở trong cộng đồng ứng dụng chúng tôi,
-    nhân viên hỗ trợ sẽ hỗ trợ giải đáp thắc mắc của bạn.
-    </div>
-    </div>`;
-  setTimeout(()=>location.reload(),4000);
+db.ref("rooms/"+room).on("child_added",snap=>{
+let data=snap.val();
+chatBox.innerHTML+=`<div>${data.user}: ${data.text}</div>`;
+chatBox.scrollTop=chatBox.scrollHeight;
+});
 }
 
-/* SEND MESSAGE */
+function back(){
+roomInside.style.display="none";
+rooms.style.display="block";
+}
 
-window.sendMessage=function(){
+function send(){
+if(!currentRoom) return;
 
-  if(!currentTeam) return alert("Bạn chưa vào đội!");
+messageCount++;
 
-  const now=Date.now();
-  messageTimes.push(now);
-  messageTimes=messageTimes.filter(t=>now-t<5000);
+if(messageCount>5){
+alert("[Data] Hệ thống chúng tôi phát hiện lần dùng của bạn rất khả nghi có thể là đang tấn công hệ thống, cho nên bạn sẽ bị đá khỏi phiên sử dụng.");
+auth.signOut();
+return;
+}
 
-  if(messageTimes.length>5){
-    showKick();
-    return;
-  }
+db.ref("rooms/"+currentRoom).push({
+user:auth.currentUser.uid,
+text:msg.value
+});
 
-  const input=document.getElementById("chatInput");
-  if(!input.value.trim()) return;
-
-  push(ref(db,"teams/"+currentTeam),{
-    text:input.value,
-    user:userId,
-    time:now
-  });
-
-  input.value="";
-};
-
-/* LOAD MESSAGE */
-
-function loadMessages(){
-  const chatBox=document.getElementById("chatBox");
-  onValue(ref(db,"teams/"+currentTeam),(snapshot)=>{
-    chatBox.innerHTML="";
-    snapshot.forEach(child=>{
-      const data=child.val();
-      const div=document.createElement("div");
-      div.className="card";
-      div.innerText=data.text;
-      chatBox.appendChild(div);
-    });
-  });
+msg.value="";
 }
 </script>
 
