@@ -43,6 +43,13 @@ nav button {
 .active {
   display: block;
 }
+
+.card {
+  background:#222;
+  padding:15px;
+  margin-bottom:15px;
+  border-radius:8px;
+}
 </style>
 </head>
 
@@ -57,100 +64,44 @@ nav button {
   <button onclick="showSection('profile')">👤 Hồ sơ</button>
 </nav>
 
-<h2>🔥 Gói Premium</h2>
-
-<div style="background:#222;padding:15px;margin:10px 0;border-radius:8px;">
-  <h3>🥉 Basic</h3>
-  <p>29.000đ / tháng</p>
-</div>
-
-<div style="background:#222;padding:15px;margin:10px 0;border-radius:8px;">
-  <h3>🥈 Pro</h3>
-  <p>59.000đ / tháng</p>
-</div>
-
-<div style="background:#222;padding:15px;margin:10px 0;border-radius:8px;">
-  <h3>🥇 Elite</h3>
-  <p>99.000đ / tháng</p>
-</div>
+<div id="home" class="section active">
   <h2>🔥 Trang Chủ</h2>
 
-  <div style="background:#222;padding:15px;margin-bottom:15px;border-radius:8px;">
-   <div id="home" class="section active">
+  <div class="card">
     <h3>📢 Thông báo</h3>
     <p>Chào mừng bạn đến với Vietnam On Top 🇻🇳 [BETA]</p>
   </div>
 
-  <div style="background:#1a1a1a;padding:15px;margin-bottom:15px;border-radius:8px;">
-    <h3>🔥 Bài nổi bật</h3>
-    <p>“Hôm nay mình cần tâm sự một chút…”</p>
-  </div>
-
-  <div style="background:#222;padding:15px;margin-bottom:15px;border-radius:8px;">
-    <h3>👑 Thành viên Premium mới</h3>
-    <p>Chưa có dữ liệu.</p>
-  </div>
-
-  <button onclick="showSection('confess')" 
+  <button onclick="showSection('confess')"
     style="width:100%;padding:12px;background:red;border:none;color:white;font-size:16px;border-radius:8px;">
     💬 Vào khu vực Tâm sự
-  </div>
   </button>
 </div>
-</div>
-</div>
 
-<h2>👑 Premium [ĐẶC QUYỀN]</h2>
-
-<div style="background:#1e1e1e;padding:15px;margin:15px 0;border-radius:10px;opacity:0.7;">
-  <h3>🥉 Premium Basic</h3>
-  <p>29.000đ / tháng</p>
-  <p>- Không quảng cáo</p>
-  <p>- Huy hiệu VIP nhỏ</p>
-  <p style="color:red;font-weight:bold;">
-    🔒 Bản Premium [ĐẶC QUYỀN] này chưa được nhà phát hành bán trên ứng dụng.
-  </p>
-</div>
-
-<div style="background:#1e1e1e;padding:15px;margin:15px 0;border-radius:10px;opacity:0.7;">
-  <h3>🥈 Premium Pro</h3>
-  <p>59.000đ / tháng</p>
-  <p>- Ưu tiên ghép đội</p>
-  <p>- Đổi màu tên</p>
-  <p>- Huy hiệu vàng</p>
-  <p style="color:red;font-weight:bold;">
-    🔒 Bản Premium [ĐẶC QUYỀN] này chưa được nhà phát hành bán trên ứng dụng.
-  </p>
-</div>
-
-<div style="background:#1e1e1e;padding:15px;margin:15px 0;border-radius:10px;opacity:0.7;">
-  <h3>🥇 Premium Elite</h3>
-  <p>99.000đ / tháng</p>
-  <p>- Phòng chat riêng</p>
-  <p>- Trải nghiệm tính năng mới trước</p>
-  <p>- Huy hiệu đặc biệt</p>
-  <p style="color:red;font-weight:bold;">
-    🔒 Bản Premium [ĐẶC QUYỀN] này chưa được nhà phát hành bán trên ứng dụng.
-  </p>
-</div>
-  <h2>Premium</h2>
-  <p>Mở khóa tính năng đặc biệt.</p>
+<div id="premium" class="section">
+  <h2>👑 Premium</h2>
+  <div class="card">Chưa mở.</div>
 </div>
 
 <div id="profile" class="section">
-  <h2>Hồ sơ</h2>
-  <p>Thông tin tài khoản của bạn.</p>
+  <h2>👤 Hồ sơ</h2>
+  <div class="card">Chưa có dữ liệu.</div>
 </div>
+
 <div id="confess" class="section">
+  <h2>💬 Chat Cộng Đồng</h2>
 
-<h2>💬 Chat Cộng Đồng</h2>
+  <div id="chatBox" style="margin-top:10px;"></div>
 
-<div id="chatBox" style="margin-top:10px;"></div>
+  <input type="text" id="chatInput" placeholder="Nhập tin nhắn..."
+    style="width:100%;padding:8px;border-radius:6px;border:none;margin-top:10px;">
 
-<input type="text" id="chatInput" placeholder="Nhập tin nhắn...">
-<button onclick="sendMessage()">Gửi</button>
-
+  <button onclick="sendMessage()"
+    style="margin-top:8px;padding:8px 15px;background:red;color:white;border:none;border-radius:6px;">
+    Gửi
+  </button>
 </div>
+
 <script>
 function showSection(id) {
   var sections = document.querySelectorAll('.section');
@@ -160,19 +111,21 @@ function showSection(id) {
   document.getElementById(id).classList.add('active');
 }
 </script>
-  <script type="module">
+
+<script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
 import { getDatabase, ref, push, onValue }
 from "https://www.gstatic.com/firebasejs/12.9.0/firebase-database.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCvKaa4S4icydrj2JYA5ch0ckGC_mT0bvc",
+  apiKey: "AIzaSyCvKaa4S4icydrj2JVA5ch0ckGC_mT0bvc",
   authDomain: "vietnamontop-77401.firebaseapp.com",
   databaseURL: "https://vietnamontop-77401-default-rtdb.firebaseio.com",
   projectId: "vietnamontop-77401",
   storageBucket: "vietnamontop-77401.firebasestorage.app",
   messagingSenderId: "89611948481",
-  appId: "1:89611948481:web:0106f02e15f429679d5f40"
+  appId: "1:89611948481:web:1116769713da2629d5f40",
+  measurementId: "G-43ZEERKCBZ"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -207,7 +160,7 @@ onValue(messagesRef, (snapshot) => {
     chatBox.appendChild(div);
   });
 });
-  </script>
+</script>
 
 </body>
 </html>
