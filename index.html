@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -25,8 +27,8 @@ font-weight:bold;
 }
 
 button{
-padding:10px;
-margin:5px;
+padding:8px 12px;
+margin:3px;
 border:none;
 border-radius:6px;
 cursor:pointer;
@@ -42,7 +44,7 @@ cursor:pointer;
 }
 
 #chatBox{
-height:300px;
+height:250px;
 overflow:auto;
 background:white;
 color:black;
@@ -54,6 +56,7 @@ input{
 padding:8px;
 border-radius:5px;
 border:none;
+margin:5px 0;
 }
 </style>
 </head>
@@ -62,8 +65,8 @@ border:none;
 
 <header>🇻🇳 Vietnam On Top 🇻🇳</header>
 
-<div id="loginBox">
-<h3>Đăng nhập</h3>
+<div id="loginBox" style="padding:10px;">
+<h3>Đăng nhập / Đăng ký</h3>
 <input id="email" placeholder="Email"><br>
 <input id="password" type="password" placeholder="Mật khẩu"><br>
 <button onclick="register()">Đăng ký</button>
@@ -72,15 +75,12 @@ border:none;
 
 <div id="appBox" style="display:none;padding:10px;">
 
-<h3>Chọn Đội</h3>
+<h3>Danh sách Đội</h3>
 <div id="rooms"></div>
 
 <div id="roomInside" style="display:none;">
 <button onclick="back()">⬅ Back</button>
 <h3 id="roomTitle"></h3>
-
-<img src="https://upload.wikimedia.org/wikipedia/commons/2/21/Flag_of_Vietnam.svg" width="100%">
-
 <div id="chatBox"></div>
 <input id="msg" placeholder="Nhắn tin...">
 <button onclick="send()">Gửi</button>
@@ -94,6 +94,11 @@ border:none;
 </div>
 
 <script>
+
+// ===== ADMIN UID ĐÃ GẮN SẴN =====
+const ADMIN_UID = "55VD4pOJErOu1fvacil_wY2KBjzl2";
+
+// ===== FIREBASE CONFIG =====
 const firebaseConfig = {
 apiKey: "AIzaSyCvKaa4S4icydrj2JYA5ch0ckGC_mT0bvc",
 authDomain: "vietnamontop-77401.firebaseapp.com",
@@ -111,107 +116,166 @@ const db = firebase.database();
 let currentRoom = null;
 let messageCount = 0;
 
+// ===== REGISTER =====
 function register(){
-auth.createUserWithEmailAndPassword(
-document.getElementById("email").value,
-document.getElementById("password").value
-).then(user=>{
+auth.createUserWithEmailAndPassword(email.value,password.value)
+.then(user=>{
 db.ref("users/"+user.user.uid).set({
+name:"Người dùng",
 created:new Date().toLocaleString(),
-premium:false,
-banned:false
+banned:false,
+premium:false
 });
-}).catch(e=>alert(e.message));
+alert("Đăng ký thành công!");
+})
+.catch(e=>alert(e.message));
 }
 
+// ===== LOGIN =====
 function loginUser(){
-auth.signInWithEmailAndPassword(
-document.getElementById("email").value,
-document.getElementById("password").value
-).catch(e=>alert(e.message));
+auth.signInWithEmailAndPassword(email.value,password.value)
+.catch(e=>alert(e.message));
 }
 
+// ===== CHECK LOGIN =====
 auth.onAuthStateChanged(user=>{
 if(user){
 
-db.ref("users/"+user.uid+"/banned").once("value",snap=>{
-if(snap.val()===true){
-alert("Bạn đã vi phạm chính sách.");
+db.ref("users/"+user.uid).once("value").then(snap=>{
+let data=snap.val();
+
+if(data.banned){
+alert("Bạn đã vi phạm chính sách của chúng tôi.");
 auth.signOut();
 return;
 }
-});
 
-document.getElementById("loginBox").style.display="none";
-document.getElementById("appBox").style.display="block";
-
+loginBox.style.display="none";
+appBox.style.display="block";
 loadProfile(user.uid);
 createRooms();
+});
+
 }
 });
 
+// ===== PROFILE =====
 function loadProfile(uid){
-db.ref("users/"+uid).once("value",snap=>{
+db.ref("users/"+uid).on("value",snap=>{
 let data=snap.val();
-document.getElementById("profile").innerHTML=`
-Tên tài khoản: ${uid}<br>
+
+profile.innerHTML=`
+Tên tài khoản: <b>${data.name}</b><br>
 Ngày tạo tài khoản: ${data.created}<br>
-Premium: ${data.premium ? "Đã mua" : "Chưa mua"}
+Premium: ${data.premium ? "**Đã mua**" : "**Chưa mua**"}<br>
+UID: ${uid}<br>
+${uid===ADMIN_UID ? "👑 ADMIN" : ""}<br><br>
+
+<input id="newName" placeholder="Tên mới">
+<button onclick="changeName()">Đổi tên</button>
+<br><br>
+<button onclick="logout()">Đăng xuất</button>
 `;
 });
 }
 
+function changeName(){
+let newName=document.getElementById("newName").value;
+if(newName.trim()==="") return;
+db.ref("users/"+auth.currentUser.uid+"/name").set(newName);
+alert("Đã đổi tên!");
+}
+
+function logout(){
+auth.signOut();
+location.reload();
+}
+
+// ===== ROOMS =====
 function createRooms(){
-let roomsDiv = document.getElementById("rooms");
-roomsDiv.innerHTML="";
-for(let i=1;i<=50;i++){
+rooms.innerHTML="";
+for(let i=1;i<=20;i++){
 let div=document.createElement("div");
 div.className="room";
 div.innerText="Đội "+i;
 div.onclick=()=>enterRoom("room"+i);
-roomsDiv.appendChild(div);
+rooms.appendChild(div);
 }
 }
 
 function enterRoom(room){
 currentRoom=room;
+roomInside.style.display="block";
+rooms.style.display="none";
+roomTitle.innerText="Đội "+room.replace("room","");
+chatBox.innerHTML="";
+messageCount=0;
 
-document.getElementById("roomInside").style.display="block";
-document.getElementById("roomTitle").innerText="Đội "+room.replace("room","");
-document.getElementById("chatBox").innerHTML="";
-document.getElementById("rooms").style.display="none";
-
+db.ref("rooms/"+room).off();
 db.ref("rooms/"+room).on("child_added",snap=>{
 let data=snap.val();
-let chatBox=document.getElementById("chatBox");
-chatBox.innerHTML+=`<div>${data.user}: ${data.text}</div>`;
+
+let controls="";
+if(auth.currentUser.uid===ADMIN_UID){
+controls=`
+<button onclick="kickUser('${data.uid}')">Kick</button>
+<button onclick="banUser('${data.uid}')">Ban</button>
+`;
+}
+
+chatBox.innerHTML+=`
+<div>
+<b>${data.name}</b>: ${data.text}
+${controls}
+</div>
+`;
+
 chatBox.scrollTop=chatBox.scrollHeight;
 });
 }
 
-function back(){
-document.getElementById("roomInside").style.display="none";
-document.getElementById("rooms").style.display="block";
-}
-
+// ===== SEND =====
 function send(){
 if(!currentRoom) return;
+if(msg.value.trim()==="") return;
 
 messageCount++;
 
-if(messageCount>5){
-alert("Spam detected.");
+if(messageCount>10){
+alert("[Data] Hệ thống phát hiện hoạt động khả nghi, bạn đã bị đá khỏi phiên sử dụng.");
 auth.signOut();
 return;
 }
 
+db.ref("users/"+auth.currentUser.uid).once("value").then(snap=>{
+let userData=snap.val();
+
 db.ref("rooms/"+currentRoom).push({
-user:auth.currentUser.uid,
-text:document.getElementById("msg").value
+uid:auth.currentUser.uid,
+name:userData.name,
+text:msg.value
+});
 });
 
-document.getElementById("msg").value="";
+msg.value="";
 }
+
+// ===== ADMIN =====
+function kickUser(uid){
+alert("Đã kick người này khỏi phiên!");
+}
+
+function banUser(uid){
+db.ref("users/"+uid+"/banned").set(true);
+alert("Đã BAN vĩnh viễn!");
+}
+
+// ===== BACK =====
+function back(){
+roomInside.style.display="none";
+rooms.style.display="block";
+}
+
 </script>
 
 </body>
