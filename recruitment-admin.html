@@ -4,14 +4,14 @@
   <meta charset="UTF-8">
   <title>Recruitment Admin</title>
 
-  <!-- Firebase CDN -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 </head>
 <body>
 
 <h2>Danh sách ứng tuyển</h2>
-<div id="list"></div>
+<div id="list">Đang kiểm tra quyền...</div>
 
 <script>
 const firebaseConfig = {
@@ -21,31 +21,63 @@ const firebaseConfig = {
   projectId: "vietnamontop-77401",
   storageBucket: "vietnamontop-77401.firebasestorage.app",
   messagingSenderId: "89611948481",
-  appId: "1:89611948481:web:0106f02e15f429679d5f40",
-  measurementId: "G-5LV99YF5DP"
+  appId: "1:89611948481:web:0106f02e15f429679d5f40"
 };
 
 firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
 const db = firebase.database();
 
 const list = document.getElementById("list");
 
-db.ref("applications").on("value", snapshot => {
-  list.innerHTML = "";
-  snapshot.forEach(child => {
-    const data = child.val();
+auth.onAuthStateChanged(user => {
 
-    list.innerHTML += `
-      <div style="border:1px solid #ccc;padding:10px;margin:10px 0;">
-        <p><b>Tên:</b> ${data.name}</p>
-        <p><b>Email:</b> ${data.email}</p>
-        <p><b>Vị trí:</b> ${data.position}</p>
-        <button onclick="approve('${child.key}')">Duyệt</button>
-        <button onclick="reject('${child.key}')">Từ chối</button>
-      </div>
-    `;
+  if (!user) {
+    alert("Bạn chưa đăng nhập");
+    window.location.href = "/";
+    return;
+  }
+
+  db.ref("users/" + user.uid).once("value").then(snapshot => {
+
+    const data = snapshot.val();
+
+    if (!data || data.role !== "admin") {
+      alert("Bạn không có quyền truy cập");
+      window.location.href = "/";
+      return;
+    }
+
+    // Nếu là admin thì load danh sách
+    loadRecruitment();
+
   });
+
 });
+
+function loadRecruitment(){
+  list.innerHTML = "";
+
+  db.ref("applications").on("value", snapshot => {
+
+    list.innerHTML = "";
+
+    snapshot.forEach(child => {
+      const data = child.val();
+
+      list.innerHTML += `
+        <div style="border:1px solid #ccc;padding:10px;margin:10px 0;">
+          <p><b>Tên:</b> ${data.name}</p>
+          <p><b>Email:</b> ${data.email}</p>
+          <p><b>Vị trí:</b> ${data.position}</p>
+          <button onclick="approve('${child.key}')">Duyệt</button>
+          <button onclick="reject('${child.key}')">Từ chối</button>
+        </div>
+      `;
+    });
+
+  });
+}
 
 function approve(id){
   db.ref("applications/" + id).update({status:"approved"});
