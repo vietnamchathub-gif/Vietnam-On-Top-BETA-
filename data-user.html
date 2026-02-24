@@ -80,8 +80,16 @@ db.ref("users").once("value", function(snapshot) {
   </td>
 
   <td>${u.created || ""}</td>
+  <td>
+  <button onclick="deleteUser('${uid}')"
+    style="background:red;color:white;border:none;padding:5px 8px;border-radius:4px;">
+    Xóa
+  </button>
+</td>
+
 </tr>
 `;
+    
   });
 
   html += "</table>";
