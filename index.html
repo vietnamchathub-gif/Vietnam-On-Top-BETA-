@@ -4,30 +4,25 @@
 <meta charset="UTF-8">
 <title>Vietnam On Top</title>
 
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js"></script>
 
 <style>
-body{font-family:Arial;margin:0;background:#0b2c6b;color:white;text-align:center}
-input{padding:8px;margin:5px;width:80%}
-button{padding:8px 15px;margin:5px}
-.teamBtn{display:block;width:90%;margin:10px auto;padding:10px;background:#fff;color:#000;border:none;border-radius:5px}
-#messages{background:#fff;color:#000;height:220px;overflow:auto;margin:10px;padding:10px}
-.adminBox{background:#08204d;padding:10px;margin-top:15px;border-radius:10px}
-.backBtn{background:white;color:black;border:none;border-radius:5px}
-.modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6)}
-.modalContent{background:white;color:black;padding:20px;margin:20% auto;width:85%;border-radius:10px}
-.premiumBox{background:#111d3a;padding:15px;margin-top:15px;border-radius:10px}
-.buyBtn{background:red;color:white;border:none;border-radius:5px;padding:10px 20px}
-.redNotice{border:3px solid red;padding:15px;margin-top:10px;color:red;font-weight:bold}
+body{font-family:Arial;background:#0a1f44;color:white;text-align:center;margin:0}
+input,button{padding:8px;margin:5px;border-radius:5px;border:none}
+button{cursor:pointer}
+.teamBtn{display:block;width:90%;margin:5px auto;background:#1e3c72;color:white}
+.chatBox{height:200px;overflow:auto;background:white;color:black;margin:10px}
+.adminBox{background:#132d63;padding:10px;margin:10px;border-radius:10px}
+.redNotice{border:2px solid red;color:red;padding:10px;margin:10px}
+.backBtn{background:orange}
 </style>
 </head>
 <body>
 
 <h2>🇻🇳 Vietnam On Top 🇻🇳</h2>
 
-<!-- AUTH -->
 <div id="authSection">
 <input id="email" placeholder="Email"><br>
 <input id="password" type="password" placeholder="Mật khẩu"><br>
@@ -35,206 +30,216 @@ button{padding:8px 15px;margin:5px}
 <button onclick="login()">Đăng nhập</button>
 </div>
 
-<!-- MAIN -->
 <div id="appSection" style="display:none">
 
-<h3>Danh sách 20 đội</h3>
+<button onclick="logout()">Đăng xuất</button>
+
+<!-- PROFILE -->
+<div class="adminBox">
+<h3>👤 Hồ sơ</h3>
+<p id="profileInfo"></p>
+</div>
+
+<!-- TEAM LIST -->
 <div id="teamList"></div>
 
+<!-- CHAT -->
+<div id="chatSection" style="display:none">
+<button class="backBtn" onclick="back()">← Back</button>
+<h3 id="teamTitle"></h3>
+<div class="chatBox" id="chatBox"></div>
+<div id="chatInputArea">
+<input id="msgInput" placeholder="Nhập tin nhắn">
+<button onclick="sendMsg()">Gửi</button>
+</div>
+</div>
+
 <!-- PREMIUM -->
-<div class="premiumBox">
+<div class="adminBox">
 <h3>⭐ Premium</h3>
 <p>Giá: 49.000đ / 30 ngày</p>
-<p>Đặc quyền:</p>
-<p>- Biểu tượng ⭐ bên cạnh tên</p>
-<p>- Ưu tiên hiển thị tin nhắn</p>
-<p>- Vào phòng chat VIP (sắp ra mắt)</p>
-<p>- Không giới hạn số tin nhắn/ngày</p>
-<button class="buyBtn" onclick="buyPremium()">Mua Premium</button>
+<p>Đặc quyền: ⭐ Biểu tượng VIP</p>
+<button onclick="buyPremium()">Mua Premium</button>
 <div id="premiumNotice"></div>
 </div>
 
 <!-- ADMIN PANEL -->
-<div id="adminPanel" style="display:none" class="adminBox">
+<div id="adminPanel" class="adminBox" style="display:none">
 <h3>🛡 ADMIN PANEL</h3>
-<button onclick="openBan()">BAN USER</button>
-<button onclick="openKick()">KICK USER</button>
+<button onclick="banPrompt()">BAN USER</button>
+<button onclick="kickPrompt()">KICK USER</button>
 </div>
 
-<button onclick="logout()">Đăng xuất</button>
 </div>
 
-<!-- TEAM -->
-<div id="teamSection" style="display:none">
-<button class="backBtn" onclick="back()">← Back</button>
-<h3 id="teamTitle"></h3>
-<div id="messages"></div>
-<input id="msgInput" placeholder="Nhập tin nhắn...">
-<button onclick="sendMsg()">Gửi</button>
-</div>
+<script type="module">
 
-<!-- MODAL -->
-<div id="actionModal" class="modal">
-<div class="modalContent">
-<h3 id="modalTitle"></h3>
-<input id="targetUID" placeholder="Nhập UID người cần xử lý"><br>
-<button onclick="confirmAction()">Hoàn Tất Xử Lí</button>
-<button onclick="closeModal()">Hủy</button>
-</div>
-</div>
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getDatabase, ref, set, push, onValue, remove, get } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-<script>
-
-const ADMIN_UID="o4WlbBoDRbPOTvbg69juPM7Iq0s1";
-let currentTeam=null;
-let currentAction=null;
-
-const firebaseConfig={
-apiKey:"AIzaSyCvKaa4S4icydrj2JYA5ch0ckGC_mT0bvc",
-authDomain:"vietnamontop-77401.firebaseapp.com",
-databaseURL:"https://vietnamontop-77401-default-rtdb.firebaseio.com",
-projectId:"vietnamontop-77401",
-storageBucket:"vietnamontop-77401.firebasestorage.app",
-messagingSenderId:"89611948481",
-appId:"1:89611948481:web:0106f02e15f429679d5f40"
+const firebaseConfig = {
+apiKey: "THAY_CONFIG",
+authDomain: "THAY",
+databaseURL: "THAY",
+projectId: "THAY",
+storageBucket: "THAY",
+messagingSenderId: "THAY",
+appId: "THAY"
 };
 
-firebase.initializeApp(firebaseConfig);
-const auth=firebase.auth();
-const db=firebase.database();
+const ADMIN_UID="o4WlbBoDRbPOTvbg69juPM7Iq0s1";
 
-function register(){
-auth.createUserWithEmailAndPassword(email.value,password.value)
+const app=initializeApp(firebaseConfig);
+const auth=getAuth();
+const db=getDatabase();
+
+let currentTeam=null;
+let currentRole="user";
+
+window.register=()=>{
+createUserWithEmailAndPassword(auth,email.value,password.value)
 .then(user=>{
-db.ref("users/"+user.user.uid).set({banned:false});
-alert("Đăng ký thành công");
-})
-.catch(e=>alert(e.message));
-}
-
-function login(){
-auth.signInWithEmailAndPassword(email.value,password.value)
-.catch(e=>alert(e.message));
-}
-
-function logout(){auth.signOut();}
-
-auth.onAuthStateChanged(user=>{
-if(user){
-db.ref("users/"+user.uid).once("value").then(snap=>{
-if(snap.val() && snap.val().banned){
-alert("Tài khoản đã bị BAN");
-logout();
-}
+set(ref(db,"users/"+user.user.uid),{
+role:"user",
+banned:false,
+premium:false
 });
+});
+};
+
+window.login=()=>{
+signInWithEmailAndPassword(auth,email.value,password.value);
+};
+
+window.logout=()=>signOut(auth);
+
+onAuthStateChanged(auth,user=>{
+if(user){
+
+get(ref(db,"users/"+user.uid)).then(snap=>{
+let data=snap.val();
+
+if(data?.banned){
+alert("Bạn đã bị BAN");
+logout();
+return;
+}
+
+currentRole=data?.role || "user";
 
 authSection.style.display="none";
 appSection.style.display="block";
 
+loadProfile(user);
+loadTeams();
+
 if(user.uid===ADMIN_UID){
+currentRole="admin";
 adminPanel.style.display="block";
 }
 
-loadTeams();
+});
 }else{
 authSection.style.display="block";
 appSection.style.display="none";
-teamSection.style.display="none";
 }
 });
+
+function loadProfile(user){
+
+if(user.uid===ADMIN_UID){
+profileInfo.innerHTML=
+"🔱 ADMIN TỐI CAO<br>Quyền: Quản lý toàn hệ thống<br>Chat trong đội: KHÔNG<br>Chat cộng đồng: CÓ";
+return;
+}
+
+if(currentRole==="staff"){
+profileInfo.innerHTML=
+"🛡 STAFF<br>Quyền: Kiểm duyệt<br>Chat trong đội: KHÔNG<br>Chat cộng đồng: CÓ";
+return;
+}
+
+profileInfo.innerHTML=
+"👤 USER<br>Email: "+user.email+
+"<br>UID: "+user.uid+
+"<br>Chat trong đội: CÓ";
+}
 
 function loadTeams(){
 teamList.innerHTML="";
 for(let i=1;i<=20;i++){
-teamList.innerHTML+=`<button class="teamBtn" onclick="enterTeam(${i})">Đội ${i}</button>`;
+let btn=document.createElement("button");
+btn.className="teamBtn";
+btn.innerText="Đội "+i;
+btn.onclick=()=>openTeam("team"+i);
+teamList.appendChild(btn);
 }
 }
 
-function enterTeam(num){
-currentTeam=num;
-appSection.style.display="none";
-teamSection.style.display="block";
-teamTitle.innerText="Đội "+num;
-loadMessages();
+function openTeam(team){
+currentTeam=team;
+teamList.style.display="none";
+chatSection.style.display="block";
+teamTitle.innerText=team;
+
+onValue(ref(db,"messages/"+team),snap=>{
+chatBox.innerHTML="";
+snap.forEach(child=>{
+let data=child.val();
+chatBox.innerHTML+=`<div>${data.text}</div>`;
+});
+});
+
+if(currentRole==="admin" || currentRole==="staff"){
+chatInputArea.style.display="none";
+}else{
+chatInputArea.style.display="block";
+}
 }
 
-function back(){
-teamSection.style.display="none";
-appSection.style.display="block";
-}
-
-function sendMsg(){
-if(!msgInput.value)return;
-db.ref("teams/team"+currentTeam).push({
-sender:auth.currentUser.email,
-uid:auth.currentUser.uid,
-message:msgInput.value,
-time:Date.now()
+window.sendMsg=()=>{
+push(ref(db,"messages/"+currentTeam),{
+text:msgInput.value
 });
 msgInput.value="";
+};
+
+window.back=()=>{
+chatSection.style.display="none";
+teamList.style.display="block";
+};
+
+window.banPrompt=()=>{
+let uid=prompt("Nhập UID cần BAN:");
+if(uid){
+set(ref(db,"users/"+uid+"/banned"),true);
+alert("Đã BAN");
 }
+};
 
-function loadMessages(){
-messages.innerHTML="";
-db.ref("teams/team"+currentTeam).off();
-db.ref("teams/team"+currentTeam).on("child_added",snap=>{
-const data=snap.val();
-messages.innerHTML+=`<div><b>${data.sender}</b>: ${data.message}</div>`;
-messages.scrollTop=messages.scrollHeight;
-});
-}
-
-/* ADMIN ACTION */
-
-function openBan(){
-currentAction="ban";
-modalTitle.innerText="BAN USER";
-actionModal.style.display="block";
-}
-
-function openKick(){
-currentAction="kick";
-modalTitle.innerText="KICK USER KHỎI ĐỘI";
-actionModal.style.display="block";
-}
-
-function closeModal(){
-actionModal.style.display="none";
-targetUID.value="";
-}
-
-function confirmAction(){
-const uid=targetUID.value;
-if(!uid)return;
-
-if(currentAction==="ban"){
-db.ref("users/"+uid+"/banned").set(true);
-alert("Đã BAN UID: "+uid);
-}
-
-if(currentAction==="kick"){
-db.ref("teams/team"+currentTeam).once("value").then(snap=>{
+window.kickPrompt=()=>{
+let uid=prompt("Nhập UID cần KICK:");
+if(uid && currentTeam){
+get(ref(db,"messages/"+currentTeam)).then(snap=>{
 snap.forEach(child=>{
 if(child.val().uid===uid){
-db.ref("teams/team"+currentTeam+"/"+child.key).remove();
+remove(ref(db,"messages/"+currentTeam+"/"+child.key));
 }
 });
-alert("Đã KICK UID khỏi đội");
+alert("Đã KICK");
 });
 }
+};
 
-closeModal();
-}
-
-/* PREMIUM */
-
-function buyPremium(){
+window.buyPremium=()=>{
 premiumNotice.innerHTML=
 `<div class="redNotice">
-Premium [ĐẶC QUYỀN] này chưa được Nhà Phát Hành bán trên ứng dụng.
+Premium [ĐẶC QUYỀN] này chưa được Nhà Phát Hành bán trên ứng dụng
 </div>`;
-}
+};
 
 </script>
+
 </body>
 </html>
