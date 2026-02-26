@@ -115,6 +115,8 @@ firebase.initializeApp(firebaseConfig);
 
 const db = firebase.database();
 const auth = firebase.auth();
+const status = document.getElementById("status");
+const list = document.getElementById("list");
 
 auth.onAuthStateChanged(function(user){
 
