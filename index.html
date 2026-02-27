@@ -52,7 +52,13 @@ input,button{padding:8px;margin:5px}
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getDatabase, ref, set, push, onValue, remove, get } 
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-import { getAuth, onAuthStateChanged, signOut, sendEmailVerification } 
+import { 
+  getAuth, 
+  onAuthStateChanged, 
+  signOut, 
+  sendEmailVerification,
+  sendPasswordResetEmail
+}
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 const firebaseConfig = {
