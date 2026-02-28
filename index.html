@@ -78,6 +78,8 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getDatabase(app);
 
+let lastMessageTime = 0;
+
 const ADMIN_UID = "o4WlbBoDRbPOTvbg69juPM7Iq0s1";
 
 const authDiv = document.getElementById("auth");
@@ -140,6 +142,16 @@ window.changeTeam = async function(){
 }
 
 window.sendMessage = async function(){
+  
+  const now = Date.now();
+
+  if (now - lastMessageTime < 2000) {
+    alert("Gửi tin quá nhanh! Chờ 2 giây.");
+    return;
+  }
+
+  lastMessageTime = now;
+
   const user=auth.currentUser;
   const text=document.getElementById("message").value;
   if(!text) return;
