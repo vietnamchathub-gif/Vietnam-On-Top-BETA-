@@ -2,14 +2,14 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Data User System Vietnam On Top</title>
+<title>Data User System</title>
 
 <style>
 body{
   margin:0;
   background:#0f1117;
   color:white;
-  font-family: 'Segoe UI', Arial, sans-serif;
+  font-family:Segoe UI, Arial, sans-serif;
 }
 
 .header{
@@ -17,7 +17,6 @@ body{
   padding:20px;
   font-size:28px;
   font-weight:800;
-  letter-spacing:1px;
   border-bottom:2px solid #2b2f3a;
 }
 
@@ -29,7 +28,6 @@ body{
   background:#1b1f2a;
   padding:20px;
   border-radius:12px;
-  box-shadow:0 0 15px rgba(0,0,0,0.4);
 }
 
 table{
@@ -41,14 +39,11 @@ th{
   background:#252a36;
   padding:12px;
   text-align:left;
-  font-weight:700;
-  font-size:14px;
 }
 
 td{
   padding:12px;
   border-bottom:1px solid #2a2f3a;
-  font-size:14px;
 }
 
 tr:hover{
@@ -61,17 +56,11 @@ button{
   border-radius:6px;
   font-weight:600;
   cursor:pointer;
+  margin-right:5px;
 }
 
-.unban{
-  background:#2e8bff;
-  color:white;
-}
-
-.delete{
-  background:#ff3b3b;
-  color:white;
-}
+.unban{ background:#2e8bff; color:white; }
+.delete{ background:#ff3b3b; color:white; }
 
 .status{
   margin-bottom:20px;
@@ -82,9 +71,7 @@ button{
 
 <body>
 
-<div class="header">
-DATA USER SYSTEM
-</div>
+<div class="header">DATA USER SYSTEM</div>
 
 <div class="container">
 <div class="card">
@@ -93,12 +80,11 @@ DATA USER SYSTEM
 </div>
 </div>
 
-<!-- Firebase phải nằm riêng như này -->
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+<script type="module">
 
-<script>
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getDatabase, ref, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
 const ADMIN_UID = "o4WlbBoDRbPOTvbg69juPM7Iq0s1";
 
@@ -112,40 +98,37 @@ const firebaseConfig = {
   appId: "1:89611948481:web:0106f02e15f429679d5f40"
 };
 
-firebase.initializeApp(firebaseConfig);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getDatabase(app);
 
-const db = firebase.database();
-const auth = firebase.auth();
-const status = document.getElementById("status");
-const list = document.getElementById("list");
+const statusDiv = document.getElementById("status");
+const listDiv = document.getElementById("list");
 
-auth.onAuthStateChanged(function(user){
+onAuthStateChanged(auth, (user) => {
 
   if(!user){
-    status.innerHTML = "❌ Bạn chưa đăng nhập";
+    statusDiv.innerHTML = "❌ Bạn chưa đăng nhập";
     return;
   }
 
   if(user.uid !== ADMIN_UID){
-    status.innerHTML = "⛔ Bạn không phải ADMIN";
+    statusDiv.innerHTML = "⛔ Bạn không phải ADMIN";
     return;
   }
 
-  status.innerHTML = "✔ ADMIN hợp lệ";
-  loadUsers();
+  statusDiv.innerHTML = "✔ ADMIN hợp lệ";
 
-});
+  const usersRef = ref(db, "users");
 
-function loadUsers(){
+  onValue(usersRef, (snapshot) => {
 
-  db.ref("users").once("value", function(snapshot){
-
-    const data = snapshot.val();
-
-    if(!data){
-      list.innerHTML = "Không có user";
+    if(!snapshot.exists()){
+      listDiv.innerHTML = "Không có user";
       return;
     }
+
+    const data = snapshot.val();
 
     let html = `
     <table>
@@ -159,6 +142,7 @@ function loadUsers(){
     `;
 
     Object.keys(data).forEach(uid => {
+
       const u = data[uid];
 
       html += `
@@ -168,31 +152,30 @@ function loadUsers(){
         <td>${u.premium || false}</td>
         <td>${u.banned || false}</td>
         <td>
-          <button class="unban" onclick="unbanUser('${uid}')">UNBAN</button>
-          <button class="delete" onclick="deleteUser('${uid}')">DELETE</button>
+          <button class="unban" onclick="window.unbanUser('${uid}')">UNBAN</button>
+          <button class="delete" onclick="window.deleteUser('${uid}')">DELETE</button>
         </td>
       </tr>
       `;
     });
 
     html += "</table>";
-    list.innerHTML = html;
+    listDiv.innerHTML = html;
 
   });
 
-}
+});
 
-function unbanUser(uid){
-  db.ref("users/" + uid + "/banned").set(false)
-  .then(()=>{ alert("Đã mở khóa"); location.reload(); });
-}
+window.unbanUser = async function(uid){
+  await update(ref(db, "users/" + uid), { banned:false });
+  alert("Đã mở khóa");
+};
 
-function deleteUser(uid){
+window.deleteUser = async function(uid){
   if(!confirm("Bạn chắc chắn muốn xóa user này?")) return;
-
-  db.ref("users/" + uid).remove()
-  .then(()=>{ alert("Đã xóa user"); location.reload(); });
-}
+  await remove(ref(db, "users/" + uid));
+  alert("Đã xóa user");
+};
 
 </script>
 
