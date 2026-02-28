@@ -2,182 +2,206 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Vietnam On Top</title>
-
+<title>Vietnam On Top 🇻🇳 *❗️Được phát hành, phát triển bởi Cộng Đồng Vietnam Chat Hub*</title>
 <style>
-body{
-  background:#0f2747;
-  color:white;
-  font-family:Arial;
-  margin:0;
-  text-align:center;
-}
-
-.header{
-  background:#0c1f38;
-  padding:15px;
-  font-size:20px;
-  font-weight:bold;
-}
-
-.team{
-  background:#274a7d;
-  margin:8px 10px;
-  padding:12px;
-  border-radius:6px;
-}
-
-.box{
-  background:black;
-  padding:20px;
-  margin:20px 10px;
-  border-radius:8px;
-}
-
-.admin{
-  display:none;
-}
-
-input{
-  padding:6px;
-  margin:5px;
-}
-
-button{
-  padding:6px 12px;
-  margin:5px;
-  cursor:pointer;
-}
+body{font-family:Arial;margin:0;background:#111;color:white}
+#auth,#main{padding:20px}
+input,button,select{padding:8px;margin:5px}
+button{cursor:pointer}
+#chatBox{height:250px;overflow-y:auto;background:#222;padding:10px;margin-top:10px}
+.msg{margin:5px 0}
+.admin{color:gold}
+.premium{background:red;padding:10px;margin-top:10px}
+#adminPanel{background:#222;padding:15px;margin-top:20px}
 </style>
 </head>
 <body>
 
-<div class="header">🇻🇳 Vietnam On Top 🇻🇳</div>
-
-<div id="userInfo">Chưa đăng nhập</div>
-
-<!-- LOGIN / REGISTER -->
-<div class="box">
-  <h3>Đăng nhập / Đăng ký</h3>
-  <input type="email" id="email" placeholder="Email"><br>
-  <input type="password" id="password" placeholder="Password"><br>
-  <button onclick="register()">Đăng ký</button>
-  <button onclick="login()">Đăng nhập</button>
-  <button onclick="loginGoogle()">Login Google</button>
-  <button onclick="logout()">Đăng xuất</button>
+<div id="auth">
+<h2>Đăng nhập / Đăng ký</h2>
+<input type="email" id="email" placeholder="Email"><br>
+<input type="password" id="password" placeholder="Password"><br>
+<button onclick="register()">Đăng ký</button>
+<button onclick="login()">Đăng nhập</button>
 </div>
 
-<!-- TEAM LIST -->
-<div id="teamList"></div>
+<div id="main" style="display:none;">
+<h2>Vietnam Chat Hub</h2>
+<button onclick="logout()">Đăng xuất</button>
 
-<!-- PREMIUM -->
-<div class="box">
-  ⭐ <b>Premium</b><br><br>
-  49.000đ / 30 ngày<br>
-  99.000đ / 90 ngày<br>
-  199.000đ / 365 ngày<br><br>
-  <button>Mua Premium</button>
+<div class="premium">
+🔥 Premium [ĐẶC QUYỀN] — Chưa mở bán
 </div>
 
-<!-- ADMIN PANEL -->
-<div class="box admin" id="adminPanel">
-  🛡 <b>ADMIN PANEL</b><br><br>
-  <input type="text" id="targetUID" placeholder="Nhập ID người cần xử lí"><br>
-  <button onclick="banUser()">Banned</button>
-  <button onclick="kickUser()">Kick</button>
+<h3>Chọn Team</h3>
+<select id="teamSelect" onchange="changeTeam()">
+<option value="Red">Red</option>
+<option value="Blue">Blue</option>
+<option value="Gold">Gold</option>
+</select>
+
+<h3>Chat</h3>
+<div id="chatBox"></div>
+<input type="text" id="message" placeholder="Nhập tin nhắn">
+<button onclick="sendMessage()">Gửi</button>
+
+<div id="adminPanel" style="display:none;">
+<h3>ADMIN PANEL</h3>
+
+<h4>Auto Ban Setup</h4>
+<input type="text" id="banWord" placeholder="hack">
+<input type="text" id="banReason" placeholder="Bạn đã vi phạm chính sách của ứng dụng VietnamOnTop">
+<button onclick="setBan()">Lưu Auto Ban</button>
+
+<h4>Auto Kick Setup</h4>
+<input type="text" id="kickWord" placeholder="spam">
+<input type="text" id="kickReason" placeholder="Bạn đã vi phạm chính sách của ứng dụng VietnamOnTop">
+<button onclick="setKick()">Lưu Auto Kick</button>
+
 </div>
 
-<!-- FIREBASE v8 -->
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+</div>
 
-<script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getDatabase, ref, set, push, onValue, get, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-// 🔥 CONFIG
-var firebaseConfig = {
+const firebaseConfig = {
   apiKey: "AIzaSyCvKaa4S4icydrj2JYA5ch0ckGC_mT0bvc",
   authDomain: "vietnamontop-77401.firebaseapp.com",
   databaseURL: "https://vietnamontop-77401-default-rtdb.firebaseio.com",
   projectId: "vietnamontop-77401",
-  storageBucket: "vietnamontop-77401.firebasestorage.app",
-  messagingSenderId: "89611948481",
-  appId: "1:89611948481:web:0106f02e15f429679d5f40"
 };
-firebase.initializeApp(firebaseConfig);
 
-const ADMIN_UID = "o4WlbBoDRbPOTvbg69juPM7Iq0s1"; 
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getDatabase(app);
 
-// Tạo team list
-for(let i=1;i<=20;i++){
-  document.getElementById("teamList").innerHTML +=
-  `<div class="team">Đội ${i}</div>`;
+const ADMIN_UID = "o4WlbBoDRbPOTvbg69juPM7Iq0s1";
+
+const authDiv = document.getElementById("auth");
+const mainDiv = document.getElementById("main");
+const adminPanel = document.getElementById("adminPanel");
+const chatBox = document.getElementById("chatBox");
+
+window.register = async function(){
+  const email=email.value;
+  const password=password.value;
+  await createUserWithEmailAndPassword(auth,email,password);
 }
 
-// REGISTER
-function register(){
-  let email = emailInput();
-  let pass = passInput();
-  firebase.auth().createUserWithEmailAndPassword(email,pass)
-  .then(()=>alert("Đăng ký thành công"))
-  .catch(e=>alert(e.message));
+window.login = async function(){
+  const email=email.value;
+  const password=password.value;
+  await signInWithEmailAndPassword(auth,email,password);
 }
 
-// LOGIN
-function login(){
-  let email = emailInput();
-  let pass = passInput();
-  firebase.auth().signInWithEmailAndPassword(email,pass)
-  .catch(e=>alert(e.message));
+window.logout = async function(){
+  await signOut(auth);
 }
 
-// GOOGLE LOGIN
-function loginGoogle(){
-  var provider = new firebase.auth.GoogleAuthProvider();
-  firebase.auth().signInWithPopup(provider);
-}
-
-// LOGOUT
-function logout(){
-  firebase.auth().signOut();
-}
-
-// AUTH CHECK
-firebase.auth().onAuthStateChanged(function(user){
+onAuthStateChanged(auth, async(user)=>{
   if(user){
-    document.getElementById("userInfo").innerHTML =
-      "Đang đăng nhập: " + user.email + "<br>UID: " + user.uid;
+    authDiv.style.display="none";
+    mainDiv.style.display="block";
 
-    if(user.uid === ADMIN_UID){
-      document.getElementById("adminPanel").style.display="block";
-    } else {
-      document.getElementById("adminPanel").style.display="none";
+    await set(ref(db,"users/"+user.uid),{
+      email:user.email,
+      team:"Red",
+      banned:false,
+      role:user.uid===ADMIN_UID?"admin":"user"
+    });
+
+    if(user.uid===ADMIN_UID){
+      adminPanel.style.display="block";
     }
 
-  } else {
-    document.getElementById("userInfo").innerHTML="Chưa đăng nhập";
-    document.getElementById("adminPanel").style.display="none";
+    checkBan(user.uid);
+    loadChat();
+  }else{
+    authDiv.style.display="block";
+    mainDiv.style.display="none";
   }
 });
 
-// ADMIN FUNCTIONS
-function banUser(){
-  let uid = document.getElementById("targetUID").value;
-  firebase.database().ref("banned/"+uid).set(true);
-  alert("Đã ban");
+async function checkBan(uid){
+  const snap=await get(ref(db,"users/"+uid));
+  if(snap.val().banned){
+    alert(snap.val().banReason);
+    await signOut(auth);
+  }
 }
 
-function kickUser(){
-  let uid = document.getElementById("targetUID").value;
-  firebase.database().ref("kick/"+uid).set(Date.now());
-  alert("Đã kick");
+window.changeTeam = async function(){
+  const user=auth.currentUser;
+  const team=document.getElementById("teamSelect").value;
+  await set(ref(db,"users/"+user.uid+"/team"),team);
 }
 
-// helpers
-function emailInput(){ return document.getElementById("email").value; }
-function passInput(){ return document.getElementById("password").value; }
+window.sendMessage = async function(){
+  const user=auth.currentUser;
+  const text=document.getElementById("message").value;
+  if(!text) return;
+
+  const banSnap=await get(ref(db,"autoBan"));
+  const kickSnap=await get(ref(db,"autoKick"));
+
+  if(banSnap.exists()){
+    if(text.includes(banSnap.val().word) && user.uid!==ADMIN_UID){
+      await set(ref(db,"users/"+user.uid+"/banned"),true);
+      await set(ref(db,"users/"+user.uid+"/banReason"),banSnap.val().reason);
+      alert(banSnap.val().reason);
+      await signOut(auth);
+      return;
+    }
+  }
+
+  if(kickSnap.exists()){
+    if(text.includes(kickSnap.val().word) && user.uid!==ADMIN_UID){
+      alert(kickSnap.val().reason);
+      await signOut(auth);
+      return;
+    }
+  }
+
+  await push(ref(db,"chat"),{
+    uid:user.uid,
+    email:user.email,
+    text:text,
+    time:Date.now()
+  });
+
+  document.getElementById("message").value="";
+}
+
+function loadChat(){
+  onValue(ref(db,"chat"),(snapshot)=>{
+    chatBox.innerHTML="";
+    snapshot.forEach(child=>{
+      const msg=child.val();
+      const div=document.createElement("div");
+      div.className="msg";
+      div.innerText=msg.email+": "+msg.text;
+      chatBox.appendChild(div);
+    });
+  });
+}
+
+window.setBan = async function(){
+  const word=document.getElementById("banWord").value;
+  const reason=document.getElementById("banReason").value;
+  await set(ref(db,"autoBan"),{word,reason});
+  alert("Đã lưu Auto Ban");
+}
+
+window.setKick = async function(){
+  const word=document.getElementById("kickWord").value;
+  const reason=document.getElementById("kickReason").value;
+  await set(ref(db,"autoKick"),{word,reason});
+  alert("Đã lưu Auto Kick");
+}
 
 </script>
-
 </body>
 </html>
