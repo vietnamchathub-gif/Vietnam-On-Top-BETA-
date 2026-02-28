@@ -104,15 +104,33 @@ const adminPanel = document.getElementById("adminPanel");
 const chatBox = document.getElementById("chatBox");
 
 window.register = async function(){
-  const email=email.value;
-  const password=password.value;
-  await createUserWithEmailAndPassword(auth,email,password);
-}
 
-window.login = async function(){
-  const email=email.value;
-  const password=password.value;
-  await signInWithEmailAndPassword(auth,email,password);
+  const emailInput = document.querySelector("input[type='email']");
+  const passwordInput = document.querySelector("input[type='password']");
+
+  const email = emailInput.value;
+  const password = passwordInput.value;
+
+  try{
+
+    const userCredential = await createUserWithEmailAndPassword(auth,email,password);
+    const user = userCredential.user;
+
+    // GHI VÀO DATABASE NGAY LẬP TỨC
+    await set(ref(db,"users/"+user.uid),{
+      email:user.email,
+      team:"Red",
+      banned:false,
+      role:user.uid===ADMIN_UID?"admin":"user",
+      createdAt: Date.now()
+    });
+
+    alert("Đăng ký thành công");
+
+  }catch(error){
+    alert(error.message);
+  }
+
 }
 
 window.logout = async function(){
