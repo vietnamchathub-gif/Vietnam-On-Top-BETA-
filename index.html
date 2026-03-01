@@ -30,7 +30,7 @@ button{cursor:pointer}
 <button onclick="logout()">Đăng xuất</button>
 
 <div class="premium">
-🔥 Premium [ĐẶC QUYỀN] — Chưa mở bán
+🔥 Premium [ĐẶC QUYỀN] — Premium [ĐẶC QUYỀN] này chưa được Nhà Phát Hành mở bán trên ứng dụng này.
 </div>
 
 <h3>Chọn Team</h3>
@@ -151,7 +151,6 @@ onAuthStateChanged(auth, async(user)=>{
   if(user){
     authDiv.style.display="none";
     mainDiv.style.display="block";
-    loadChat();
 
     if(user.uid===ADMIN_UID){
       adminPanel.style.display="block";
@@ -216,11 +215,11 @@ window.sendMessage = async function(){
   }
 
   await push(ref(db,"chat"),{
-    uid:user.uid,
-    email:user.email,
-    text:text,
-    time:Date.now()
-  });
+  uid:user.uid,
+  email:user.email || "Unknown User",
+  text:text,
+  time:Date.now()
+});
 
   document.getElementById("message").value="";
 }
@@ -228,13 +227,22 @@ window.sendMessage = async function(){
 function loadChat(){
   onValue(ref(db,"chat"),(snapshot)=>{
     chatBox.innerHTML="";
+
     snapshot.forEach(child=>{
-      const msg=child.val();
-      const div=document.createElement("div");
-      div.className="msg";
-      div.innerText=msg.email+": "+msg.text;
+      const msg = child.val();
+      const div = document.createElement("div");
+      div.className = "msg";
+
+      const name = msg.email ? msg.email : "Unknown";
+      const message = msg.text ? msg.text : "";
+
+      div.textContent = name + ": " + message;
+
       chatBox.appendChild(div);
     });
+
+    // auto scroll xuống cuối
+    chatBox.scrollTop = chatBox.scrollHeight;
   });
 }
 
