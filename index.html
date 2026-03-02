@@ -66,7 +66,7 @@ VietnamOnTop có quyền chỉnh sửa, cập nhật chính sách bất cứ lú
 <p style="text-align:center">
 Developer/Management: Vietnam Chat Hub<br>
 <a href="https://discord.gg/yVUQmkQeAN" target="_blank" style="color:#00c3ff">
-Discord cộng đồng
+Cộng Đồng Ứng Dụng Trên Discord ❗️
 </a>
 </p>
 
@@ -158,30 +158,48 @@ let menu=document.getElementById("sideMenu");
 menu.style.left=menu.style.left==="0px"?"-300px":"0px";
 };
 
-window.register=async()=>{
-const email=email.value;
-const password=password.value;
-const user=await createUserWithEmailAndPassword(auth,email,password);
-await sendEmailVerification(user.user);
+window.register = async () => {
+try {
+const emailInput = document.getElementById("email").value;
+const passwordInput = document.getElementById("password").value;
 
-await set(ref(db,"users/"+user.user.uid),{
-email:email,
-role:user.user.uid===ADMIN_UID?"admin":"user",
-premium:{type:null,expire:0},
-ban:{status:false,expire:0}
+const userCredential = await createUserWithEmailAndPassword(auth, emailInput, passwordInput);
+await sendEmailVerification(userCredential.user);
+
+await set(ref(db, "users/" + userCredential.user.uid), {
+email: emailInput,
+role: userCredential.user.uid === ADMIN_UID ? "admin" : "user",
+premium: { type: null, expire: 0 },
+ban: { status: false, expire: 0 }
 });
+
 alert("Đăng ký thành công, kiểm tra email xác minh.");
+} catch (error) {
+alert(error.message);
+}
 };
 
-window.login=async()=>{
-await signInWithEmailAndPassword(auth,email.value,password.value);
+window.login = async () => {
+try {
+const emailInput = document.getElementById("email").value;
+const passwordInput = document.getElementById("password").value;
+
+await signInWithEmailAndPassword(auth, emailInput, passwordInput);
+} catch (error) {
+alert(error.message);
+}
 };
 
 window.logout=()=>signOut(auth);
 
-window.resetPass=()=>{
-sendPasswordResetEmail(auth,email.value);
+window.resetPass = async () => {
+try {
+const emailInput = document.getElementById("email").value;
+await sendPasswordResetEmail(auth, emailInput);
 alert("Đã gửi email reset.");
+} catch (error) {
+alert(error.message);
+}
 };
 
 onAuthStateChanged(auth,async(user)=>{
