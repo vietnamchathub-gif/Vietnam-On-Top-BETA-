@@ -1,1 +1,2 @@
-# Vietnam-On-Top-BETA
+# Vietnam On Top [BẢN CHÍNH THỨC]
+**Developer/Management: # Vietnam Chat Hub 
